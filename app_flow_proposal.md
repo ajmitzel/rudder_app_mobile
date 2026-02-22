@@ -111,3 +111,4 @@
 - Offline strategy (queue vs limited offline)
 - Auth for mobile (token + refresh)
 - Role‑based navigation (OWNER/ADMIN/MEMBER/TIME_ONLY)
+- OCR fallback strategy: use a backup LLM extraction pass only when OCR output quality is below threshold.

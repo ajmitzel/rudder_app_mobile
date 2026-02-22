@@ -113,6 +113,7 @@ contractorSaas_mobile/
 - Dynamic camera aspect tuning per device if letterboxing persists.
 - Integrations to import jobs/schedules from external systems (e.g., Jobber).
 - OCR guidance: decide on real-time feedback stack.
+- Add fallback LLM receipt processing for low-quality OCR cases (run only when OCR confidence/field completeness is below threshold to control cost).
 
 ## OCR Guidance (Offline, Real-Time)
 
