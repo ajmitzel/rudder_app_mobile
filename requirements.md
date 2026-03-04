@@ -130,3 +130,10 @@ contractorSaas_mobile/
 - `react-native-vision-camera` + frame processors.
 - True frame-by-frame analysis (brightness/blur/edge/rectangle detection).
 - Still avoid strict “all edges” requirement; provide soft guidance.
+
+
+IjhkY2RmOThiLWM4YzMtNGU3My1iZDAyLTE3YWRiYzI2MjJiNyI.aY9s8w.xg1bSOtRox4kv8gGZpT7sQMMhvE
+
+curl -L "https://rudder-api.onrender.com/api/v1/receipts/suggestions/<SUGGESTION_ID>/normalize-preview?variant=rectified_gray_autocontrast" \
+  -H "Authorization: Bearer <YOUR_TOKEN>" \
+  --output preview.jpg
