@@ -27,7 +27,10 @@ export default function ReceiptCaptureScreen() {
   const CAMERA_ASPECT = 3 / 4; // portrait: width/height
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [qualityHint, setQualityHint] = useState<string>('Ready to capture.');
+  const [capturing, setCapturing] = useState(false);
   const analyzingRef = useRef(false);
+  const captureInFlightRef = useRef(false);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     const loadQueue = async () => {
@@ -39,11 +42,18 @@ export default function ReceiptCaptureScreen() {
   }, []);
 
   useEffect(() => {
-    if (Platform.OS === 'web' || !permission?.granted || !cameraReady || previewUri || uploading) {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' || !permission?.granted || !cameraReady || previewUri || uploading || capturing) {
       return;
     }
     const timer = setInterval(async () => {
-      if (!cameraRef.current || analyzingRef.current) {
+      if (!cameraRef.current || analyzingRef.current || capturing || captureInFlightRef.current) {
         return;
       }
       analyzingRef.current = true;
@@ -75,10 +85,13 @@ export default function ReceiptCaptureScreen() {
       }
     }, 700);
     return () => clearInterval(timer);
-  }, [permission?.granted, cameraReady, previewUri, uploading]);
+  }, [permission?.granted, cameraReady, previewUri, uploading, capturing]);
 
   const handleCapture = async () => {
     setStatus(null);
+    if (capturing || captureInFlightRef.current) {
+      return;
+    }
     if (Platform.OS === 'web') {
       setStatus('Camera preview is not supported on web yet.');
       return;
@@ -94,14 +107,37 @@ export default function ReceiptCaptureScreen() {
       setStatus('Camera not ready.');
       return;
     }
-    const photo = await cameraRef.current.takePictureAsync({
-      quality: 0.8,
-      skipProcessing: false,
-    });
-    if (!photo?.uri) {
+    if (analyzingRef.current) {
+      setStatus('Camera is still focusing. Try again.');
       return;
     }
-    setPreviewUri(photo.uri);
+
+    captureInFlightRef.current = true;
+    setCapturing(true);
+    try {
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.8,
+        skipProcessing: false,
+      });
+      if (photo?.uri && mountedRef.current) {
+        setPreviewUri(photo.uri);
+      }
+    } catch (err) {
+      if (!mountedRef.current) {
+        return;
+      }
+      const msg = err instanceof Error ? err.message : 'Capture failed. Please try again.';
+      if (msg.toLowerCase().includes('camera unmounted')) {
+        setStatus('Camera reset while capturing. Please try again.');
+      } else {
+        setStatus(msg);
+      }
+    } finally {
+      captureInFlightRef.current = false;
+      if (mountedRef.current) {
+        setCapturing(false);
+      }
+    }
   };
 
   const handleRetake = () => {
@@ -210,19 +246,19 @@ export default function ReceiptCaptureScreen() {
       <ThemedView style={styles.actions}>
         {previewUri ? (
           <>
-            <Pressable style={styles.primaryButton} onPress={handleUsePhoto} disabled={uploading}>
+            <Pressable style={styles.primaryButton} onPress={handleUsePhoto} disabled={uploading || capturing}>
               <ThemedText style={styles.primaryButtonText}>
                 {uploading ? 'Saving…' : 'Use Photo'}
               </ThemedText>
             </Pressable>
-            <Pressable style={styles.secondaryButton} onPress={handleRetake} disabled={uploading}>
+            <Pressable style={styles.secondaryButton} onPress={handleRetake} disabled={uploading || capturing}>
               <ThemedText style={styles.secondaryButtonText}>Retake</ThemedText>
             </Pressable>
           </>
         ) : (
-          <Pressable style={styles.primaryButton} onPress={handleCapture} disabled={uploading}>
+          <Pressable style={styles.primaryButton} onPress={handleCapture} disabled={uploading || capturing}>
             <ThemedText style={styles.primaryButtonText}>
-              {uploading ? 'Uploading…' : 'Capture'}
+              {capturing ? 'Capturing…' : uploading ? 'Uploading…' : 'Capture'}
             </ThemedText>
           </Pressable>
         )}
