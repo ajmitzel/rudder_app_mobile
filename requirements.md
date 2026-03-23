@@ -135,3 +135,5 @@ contractorSaas_mobile/
 curl -L "https://rudder-api.onrender.com/api/v1/receipts/suggestions/<SUGGESTION_ID>/normalize-preview?variant=rectified_gray_autocontrast" \
   -H "Authorization: Bearer <YOUR_TOKEN>" \
   --output preview.jpg
+
+Note: The upload and capture workflow should be gatekept by accounts, not at the moment of upload
